@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  db_psql:
+    image: postgres:12.2
+    restart: always
+    container_name: db_psql_app
+    volumes:
+      - /home/pi/app/_db_psql:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: root
+
+  rails:
+    image: otrodeteruel/rails260
+    restart: always
+    container_name: rails_app
+    command: bundle exec rails s -e production -b '0.0.0.0'
+    depends_on:
+      - db_psql
+    environment:
+      RAILS_ENV: production
+
+    volumes:
+      - /home/pi/app/web:/app
+      - /home/pi/app/_bundle:/usr/local/bundle
+    tty: true
+
+  web:
+    image: otrodeteruel/ngnix1173
+    restart: always
+    container_name: nginx_app
+    volumes:
+      - /home/pi/app/web:/app
+    port:
+      - 80:80
+    depends_on:
+      - rails
+
