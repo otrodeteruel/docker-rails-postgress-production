@@ -1,8 +1,10 @@
-
-
 # DOCKER RUBY ON RAILS PARA RASPBERRY PI
 
-Conjunto de contenedores para subir una aplicacion a produccion una aplicacion de Ruby on Rails a un servido o en una rapsberry pi imagen compilada para las plataformas de linux/amd64,linux/arm64,linux/arm/v7 Se compone de tres contenedores, Postgres 12.2, Ruby 2.6 y Ngnix 1.17
+Conjunto de contenedores para subir una aplicacion de Ruby On Rails a produccion. A un servidor o en una rapsberry pi, la imagen se compilada para las plataformas de linux/amd64,linux/arm64,linux/arm/v7.
+
+Se compone de tres contenedores, Postgres 12.2, Ruby 2.6 y Ngnix 1.17, orquestado por docker-compose
+
+los paso a seguir
 
 una vez clonado el repositorio copiar nuestra aplicacion dentro del directorio web
 
@@ -16,20 +18,24 @@ docker run -it --rm --name rails_app -v $PWD/web:/app -v $PWD/_bundle:/usr/local
 
 ### add credentials
 
+corre el contenedor de rails run bash
+
 ```
 docker run -it --rm --name rails_app -e RAILS_ENV=production -v $PWD/web:/app -v $PWD/_bundle:/usr/local/bundle otrodeteruel/rails260 bash
+```
+dentro del contenedor ejecutar 
 
+```
 SECRET_KEY_BASE=production_test_key EDITOR="nano" rails credentials:edit
 ```
 
-pegar el contenido con las claves
+pegar el contenido con las los datos personalizados a nuestro proyecto
 
 ```
 postgres:
   base: base
   user: user_app_db
   password: xxxxxxxxxxxxxxxxxxxx
-
 
 ```
 
@@ -66,47 +72,3 @@ RAILS_ENV=production rails db:seed
 
 RAILS_ENV=production rails assets:precompile
 ```
-
-
-
-
-# docker-compose
-
-
-version: '3'
-
-services:
-  db_psql:
-    image: postgres:12.2
-    restart: always
-    container_name: db_psql_app
-    volumes:
-      - /home/pi/app/_db_psql:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: root
-
-  rails:
-    image: otrodeteruel/rails260
-    restart: always
-    container_name: rails_app
-    command: bundle exec rails s -e production -b '0.0.0.0'
-    depends_on:
-      - db_psql
-    environment:
-      RAILS_ENV: production
-
-    volumes:
-      - /home/pi/app/web:/app
-      - /home/pi/app/_bundle:/usr/local/bundle
-    tty: true
-
-  web:
-    image: otrodeteruel/ngnix1173
-    restart: always
-    container_name: nginx_app
-    volumes:
-      - /home/pi/app/web:/app
-    port:
-      - 80:80
-    depends_on:
-      - rails
